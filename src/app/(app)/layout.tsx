@@ -32,7 +32,7 @@ export default async function AppLayout({
     <ActingAsProvider>
       <div className="flex min-h-screen flex-col">
         <header className="bg-background/95 sticky top-0 z-10 border-b backdrop-blur">
-          <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-4 py-3">
+          <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
             <span className="text-3xl font-semibold tracking-tight">Our Life Planner</span>
             <div className="flex items-center gap-2">
               <ProfileSwitcher />
@@ -43,11 +43,11 @@ export default async function AppLayout({
               </form>
             </div>
           </div>
-          <div className="mx-auto max-w-3xl px-4 pb-2">
+          <div className="mx-auto max-w-6xl px-4 pb-2">
             <NavPills items={PRIMARY_NAV} />
           </div>
         </header>
-        <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6">{children}</main>
+        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">{children}</main>
       </div>
     </ActingAsProvider>
   );

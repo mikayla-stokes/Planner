@@ -17,7 +17,7 @@ export default async function DashboardPage() {
   const today = startOfToday();
   const endOfToday = new Date(today.getTime() + 24 * 60 * 60 * 1000);
 
-  const [dueTasks, dueWorkTasks, allChores, wedding, checklistTotal, checklistDone, todayEvents] = await Promise.all([
+  const [dueTasks, dueWorkTasks, allChores, wedding, checklistTotal, checklistDone, upcomingEvents] = await Promise.all([
     db.task.findMany({
       where: { listType: "GENERAL", completed: false, dueDate: { lt: endOfToday } },
       orderBy: { dueDate: "asc" },
@@ -32,7 +32,11 @@ export default async function DashboardPage() {
     db.wedding.findFirst(),
     db.checklistItem.count(),
     db.checklistItem.count({ where: { completed: true } }),
-    db.calendarEvent.findMany({ where: { date: todayDateOnly() }, orderBy: { createdAt: "asc" } }),
+    db.calendarEvent.findMany({
+      where: { date: { gte: todayDateOnly() } },
+      orderBy: [{ date: "asc" }, { createdAt: "asc" }],
+      take: 3,
+    }),
   ]);
 
   const dueChores = allChores.filter((c) => isChoreDue(c.frequency, c.lastCompletedAt)).slice(0, 5);
@@ -140,16 +144,19 @@ export default async function DashboardPage() {
         <CardHeader className="pb-2">
           <CardTitle className="text-base">
             <Link href="/calendar" className="hover:underline">
-              Calendar {todayEvents.length > 0 ? `— ${todayEvents.length} today` : ""}
+              Calendar {upcomingEvents.length > 0 ? `— next ${upcomingEvents.length}` : ""}
             </Link>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-1.5">
-          {todayEvents.length === 0 && <p className="text-muted-foreground text-sm">Nothing on the calendar today.</p>}
-          {todayEvents.map((event) => (
+          {upcomingEvents.length === 0 && <p className="text-muted-foreground text-sm">Nothing upcoming on the calendar.</p>}
+          {upcomingEvents.map((event) => (
             <div key={event.id} className="flex items-center justify-between text-sm">
               <span>{event.title}</span>
-              {event.time && <span className="text-muted-foreground text-xs">{event.time}</span>}
+              <span className="text-muted-foreground text-xs">
+                {event.date.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })}
+                {event.time ? ` · ${event.time}` : ""}
+              </span>
             </div>
           ))}
         </CardContent>
