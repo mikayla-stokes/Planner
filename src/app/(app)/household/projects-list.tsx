@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import type { getHomeProjects } from "./queries";
 import { toggleHomeProject } from "./actions";
 import { EditProjectButton } from "./project-dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 type Projects = Awaited<ReturnType<typeof getHomeProjects>>;
@@ -61,16 +62,32 @@ function ProjectRow({ project }: { project: Projects[number] }) {
 }
 
 export function ProjectsList({ projects }: { projects: Projects }) {
+  const [hideCompleted, setHideCompleted] = useState(false);
+
+  const visible = useMemo(
+    () => (hideCompleted ? projects.filter((p) => !p.completed) : projects),
+    [projects, hideCompleted],
+  );
+
   return (
-    <Card>
-      <CardContent className="divide-y py-0">
-        {projects.map((project) => (
-          <ProjectRow key={project.id} project={project} />
-        ))}
-        {projects.length === 0 && (
-          <p className="text-muted-foreground py-8 text-center text-sm">No home projects yet.</p>
-        )}
-      </CardContent>
-    </Card>
+    <div className="space-y-2">
+      <div className="flex justify-end">
+        <Button type="button" variant="ghost" size="sm" onClick={() => setHideCompleted((v) => !v)}>
+          {hideCompleted ? "Show completed" : "Hide completed"}
+        </Button>
+      </div>
+      <Card>
+        <CardContent className="divide-y py-0">
+          {visible.map((project) => (
+            <ProjectRow key={project.id} project={project} />
+          ))}
+          {visible.length === 0 && (
+            <p className="text-muted-foreground py-8 text-center text-sm">
+              {projects.length === 0 ? "No home projects yet." : "All done! 🎉"}
+            </p>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }

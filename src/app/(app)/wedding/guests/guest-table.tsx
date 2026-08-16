@@ -6,6 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { EditGuestButton } from "./guest-form-sheet";
 
 type Guests = Awaited<ReturnType<typeof getGuests>>;
@@ -17,19 +24,29 @@ const RSVP_VARIANT: Record<string, "default" | "secondary" | "destructive" | "ou
   PENDING: "outline",
 };
 
+const RSVP_FILTER_ALL = "ALL";
+const RSVP_FILTER_LABELS: Record<string, string> = {
+  [RSVP_FILTER_ALL]: "All RSVPs",
+  YES: "Yes",
+  NO: "No",
+  PENDING: "Not yet",
+};
+
 export function GuestTable({ guests, tables }: { guests: Guests; tables: Tables }) {
   const [query, setQuery] = useState("");
   const [onlyReview, setOnlyReview] = useState<"all" | "review">("all");
+  const [rsvpFilter, setRsvpFilter] = useState(RSVP_FILTER_ALL);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return guests.filter((g) => {
       if (onlyReview === "review" && !g.needsReview) return false;
+      if (rsvpFilter !== RSVP_FILTER_ALL && g.rsvpStatus !== rsvpFilter) return false;
       if (!q) return true;
       const haystack = `${g.firstName} ${g.lastName} ${g.notes ?? ""} ${g.role ?? ""}`.toLowerCase();
       return haystack.includes(q);
     });
-  }, [guests, query, onlyReview]);
+  }, [guests, query, onlyReview, rsvpFilter]);
 
   return (
     <div className="space-y-3">
@@ -40,12 +57,26 @@ export function GuestTable({ guests, tables }: { guests: Guests; tables: Tables 
           onChange={(e) => setQuery(e.target.value)}
           className="sm:max-w-xs"
         />
-        <Tabs value={onlyReview} onValueChange={(v) => setOnlyReview(v as typeof onlyReview)}>
-          <TabsList>
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="review">Needs Review</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <Select value={rsvpFilter} onValueChange={(v) => setRsvpFilter(v ?? RSVP_FILTER_ALL)}>
+            <SelectTrigger className="w-full sm:w-auto">
+              <SelectValue>{(v: string) => RSVP_FILTER_LABELS[v] ?? v}</SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {Object.entries(RSVP_FILTER_LABELS).map(([value, label]) => (
+                <SelectItem key={value} value={value}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Tabs value={onlyReview} onValueChange={(v) => setOnlyReview(v as typeof onlyReview)}>
+            <TabsList>
+              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="review">Needs Review</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
       </div>
 
       <div className="space-y-2">

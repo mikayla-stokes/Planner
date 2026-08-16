@@ -7,6 +7,7 @@ import { EditTaskButton } from "./task-dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 
@@ -90,23 +91,30 @@ function TaskRow({ task, profiles }: { task: Tasks[number]; profiles: Profiles }
 
 export function TaskBoard({ tasks, profiles }: { tasks: Tasks; profiles: Profiles }) {
   const [filter, setFilter] = useState<Filter>("All");
+  const [hideCompleted, setHideCompleted] = useState(false);
 
   const filtered = useMemo(
-    () => tasks.filter((t) => ownerMatches(t.profile?.name, filter)),
-    [tasks, filter],
+    () =>
+      tasks.filter((t) => ownerMatches(t.profile?.name, filter) && !(hideCompleted && t.completed)),
+    [tasks, filter, hideCompleted],
   );
 
   return (
     <div className="space-y-3">
-      <Tabs value={filter} onValueChange={(v) => setFilter(v as Filter)}>
-        <TabsList>
-          {FILTERS.map((f) => (
-            <TabsTrigger key={f} value={f}>
-              {f}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
+      <div className="flex items-center justify-between gap-2">
+        <Tabs value={filter} onValueChange={(v) => setFilter(v as Filter)}>
+          <TabsList>
+            {FILTERS.map((f) => (
+              <TabsTrigger key={f} value={f}>
+                {f}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+        <Button type="button" variant="ghost" size="sm" onClick={() => setHideCompleted((v) => !v)}>
+          {hideCompleted ? "Show completed" : "Hide completed"}
+        </Button>
+      </div>
 
       <Card>
         <CardContent className="divide-y py-0">

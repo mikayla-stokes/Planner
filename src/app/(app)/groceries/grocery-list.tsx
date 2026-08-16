@@ -105,23 +105,32 @@ function ItemRow({ item }: { item: Items[number] }) {
 
 export function GroceryList({ items }: { items: Items }) {
   const [, startTransition] = useTransition();
+  const [hideChecked, setHideChecked] = useState(false);
   const hasChecked = items.some((i) => i.checked);
+  const visible = hideChecked ? items.filter((i) => !i.checked) : items;
 
   return (
     <div className="space-y-3">
       <AddItemRow />
       <Card>
         <CardContent className="divide-y py-0">
-          {items.map((item) => (
+          {visible.map((item) => (
             <ItemRow key={item.id} item={item} />
           ))}
-          {items.length === 0 && (
-            <p className="text-muted-foreground py-8 text-center text-sm">Your grocery list is empty.</p>
+          {visible.length === 0 && (
+            <p className="text-muted-foreground py-8 text-center text-sm">
+              {items.length === 0 ? "Your grocery list is empty." : "Everything's checked off! 🎉"}
+            </p>
           )}
         </CardContent>
       </Card>
-      {hasChecked && (
-        <div className="flex justify-end">
+      <div className="flex justify-end gap-1">
+        {hasChecked && (
+          <Button type="button" variant="ghost" size="sm" onClick={() => setHideChecked((v) => !v)}>
+            {hideChecked ? "Show checked" : "Hide checked"}
+          </Button>
+        )}
+        {hasChecked && (
           <Button
             type="button"
             variant="ghost"
@@ -130,8 +139,8 @@ export function GroceryList({ items }: { items: Items }) {
           >
             Clear checked
           </Button>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

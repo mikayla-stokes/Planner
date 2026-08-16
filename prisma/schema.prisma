@@ -76,6 +76,7 @@ model Wedding {
   receptionLocation        String?
   estimatedGuestCountLow   Int?
   estimatedGuestCountHigh  Int?
+  notes                    String?
 }
 
 model Venue {

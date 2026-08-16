@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 type Milestones = Awaited<ReturnType<typeof getMilestonesWithItems>>;
@@ -17,6 +18,12 @@ type SubItem = Item["subItems"][number];
 
 const FILTERS = ["All", "Mikayla", "Caleb"] as const;
 type Filter = (typeof FILTERS)[number];
+
+const PRIORITY_VARIANT: Record<string, "default" | "secondary" | "outline"> = {
+  HIGH: "default",
+  MEDIUM: "secondary",
+  LOW: "outline",
+};
 
 function ownerMatches(owner: string, filter: Filter) {
   if (filter === "All") return true;
@@ -56,6 +63,11 @@ function ChecklistRow({ item, indent = false }: { item: Item | SubItem; indent?:
         {item.title}
       </span>
       <div className="ml-auto flex shrink-0 items-center gap-1">
+        {item.priority && (
+          <Badge variant={PRIORITY_VARIANT[item.priority]} className="text-[10px]">
+            {item.priority}
+          </Badge>
+        )}
         {"owner" in item && item.owner !== "SHARED" && (
           <Badge variant="secondary" className="text-[10px]">
             {item.owner === "UNDECIDED" ? "TBD" : item.owner}
@@ -69,6 +81,7 @@ function ChecklistRow({ item, indent = false }: { item: Item | SubItem; indent?:
 
 export function ChecklistBoard({ milestones }: { milestones: Milestones }) {
   const [filter, setFilter] = useState<Filter>("All");
+  const [hideCompleted, setHideCompleted] = useState(false);
 
   const filtered = useMemo(() => {
     return milestones.map((milestone) => ({
@@ -79,20 +92,26 @@ export function ChecklistBoard({ milestones }: { milestones: Milestones }) {
 
   return (
     <div className="space-y-4">
-      <Tabs value={filter} onValueChange={(v) => setFilter(v as Filter)}>
-        <TabsList>
-          {FILTERS.map((f) => (
-            <TabsTrigger key={f} value={f}>
-              {f}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
+      <div className="flex items-center justify-between gap-2">
+        <Tabs value={filter} onValueChange={(v) => setFilter(v as Filter)}>
+          <TabsList>
+            {FILTERS.map((f) => (
+              <TabsTrigger key={f} value={f}>
+                {f}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+        <Button type="button" variant="ghost" size="sm" onClick={() => setHideCompleted((v) => !v)}>
+          {hideCompleted ? "Show completed" : "Hide completed"}
+        </Button>
+      </div>
 
       {filtered.map((milestone) => {
         const total = milestone.items.length;
         const done = milestone.items.filter((i) => i.completed).length;
         const pct = total === 0 ? 0 : Math.round((done / total) * 100);
+        const visibleItems = hideCompleted ? milestone.items.filter((i) => !i.completed) : milestone.items;
 
         return (
           <Card key={milestone.id}>
@@ -109,11 +128,11 @@ export function ChecklistBoard({ milestones }: { milestones: Milestones }) {
               <Progress value={pct} className="h-1.5" />
             </CardHeader>
             <CardContent className="space-y-0.5">
-              {milestone.items.map((item) => (
+              {visibleItems.map((item) => (
                 <div key={item.id}>
                   <ChecklistRow item={item} />
                   {item.subItems
-                    .filter((sub) => ownerMatches(sub.owner, filter))
+                    .filter((sub) => ownerMatches(sub.owner, filter) && !(hideCompleted && sub.completed))
                     .map((sub) => (
                       <ChecklistRow key={sub.id} item={sub} indent />
                     ))}
@@ -121,6 +140,9 @@ export function ChecklistBoard({ milestones }: { milestones: Milestones }) {
               ))}
               {total === 0 && (
                 <p className="text-muted-foreground py-2 text-sm">Nothing here yet.</p>
+              )}
+              {total > 0 && visibleItems.length === 0 && (
+                <p className="text-muted-foreground py-2 text-sm">All done! 🎉</p>
               )}
             </CardContent>
           </Card>
