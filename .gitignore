@@ -1,0 +1,38 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# env files
+.env
+.env*.local
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# portable local toolchain (not needed once real Node is on PATH)
+/.tools
+
+# original wedding source documents — large binaries, reconciled data lives in prisma/seed instead
+/seed-data/*.docx
+/seed-data/*.xlsx
+
+/src/generated/prisma

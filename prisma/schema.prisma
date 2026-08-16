@@ -1,0 +1,601 @@
+// Prisma schema — Personal Life Planner
+// Phase 1: cross-cutting foundation (Profile/Tag/Priority/CalendarCategory) + Wedding Planning.
+// Later phases (Work, Household, Groceries, Finance, etc.) will add models here without
+// touching what's already defined — see the plan doc for the full section list.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------- Cross-cutting ----------
+
+model Profile {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+
+  tasks           Task[]
+  chores          Chore[]
+  dailyCheckIns   DailyCheckIn[]
+  goals           Goal[]
+  bills           Bill[]
+  financeExpenses FinanceExpense[]
+}
+
+model Tag {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  color     String
+  createdAt DateTime @default(now())
+
+  entityTags EntityTag[]
+}
+
+/// App-enforced polymorphic join: entityType is a literal like "ChecklistItem" or "Guest".
+model EntityTag {
+  id         String @id @default(cuid())
+  tag        Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  tagId      String
+  entityType String
+  entityId   String
+
+  @@unique([tagId, entityType, entityId])
+  @@index([entityType, entityId])
+}
+
+enum Priority {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum CalendarCategory {
+  WEDDING
+  FAMILY
+  PERSONAL
+  WORK
+  CALEB_ONLY
+}
+
+// ---------- Wedding Planning ----------
+
+model Wedding {
+  id                       String    @id @default(cuid())
+  weddingDate              DateTime
+  brideName                String
+  groomName                String
+  bridePhone               String?
+  groomPhone               String?
+  venueName                String?
+  ceremonyLocation         String?
+  receptionLocation        String?
+  estimatedGuestCountLow   Int?
+  estimatedGuestCountHigh  Int?
+}
+
+model Venue {
+  id                  String   @id @default(cuid())
+  name                String
+  address             String?
+  roomRate            String?
+  includedAmenities   String[]
+  excludedAmenities   String[]
+  notes               String?
+}
+
+enum ChecklistOwner {
+  MIKAYLA
+  CALEB
+  SHARED
+  UNDECIDED
+}
+
+model ChecklistMilestone {
+  id         String   @id @default(cuid())
+  label      String
+  sortOrder  Int
+  monthsOut  Int?
+  fixedDate  DateTime?
+
+  items ChecklistItem[]
+}
+
+model ChecklistItem {
+  id           String             @id @default(cuid())
+  milestone    ChecklistMilestone @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
+  milestoneId  String
+  owner        ChecklistOwner
+  title        String
+  parentItem   ChecklistItem?     @relation("ChecklistItemSubItems", fields: [parentItemId], references: [id], onDelete: Cascade)
+  parentItemId String?
+  subItems     ChecklistItem[]    @relation("ChecklistItemSubItems")
+  completed    Boolean            @default(false)
+  priority     Priority?
+  notes        String?
+  createdAt    DateTime           @default(now())
+
+  @@index([milestoneId])
+  @@index([parentItemId])
+}
+
+model SeatingTable {
+  id     String  @id @default(cuid())
+  name   String  @unique
+
+  guests Guest[]
+}
+
+enum GuestHost {
+  BRIDE
+  GROOM
+  BOTH
+}
+
+enum GuestType {
+  FAMILY
+  FRIENDS
+  PLUS_ONE
+  COLLEAGUES
+}
+
+enum RsvpExpectation {
+  YES
+  NO
+  UNSURE
+}
+
+enum RsvpStatus {
+  YES
+  NO
+  PENDING
+}
+
+model Guest {
+  id                 String           @id @default(cuid())
+  firstName          String
+  lastName           String
+  table              SeatingTable?    @relation(fields: [tableId], references: [id])
+  tableId            String?
+  host               GuestHost
+  type               GuestType
+  role               String?
+  events             String[]
+  saveTheDateSent    Boolean          @default(false)
+  inviteSent         Boolean          @default(false)
+  isKid              Boolean          @default(false)
+  expectedRsvp       RsvpExpectation?
+  rsvpStatus         RsvpStatus       @default(PENDING)
+  phone              String?
+  email              String?
+  addressedTo        String?
+  address            String?
+  cityZip            String?
+  arrivalDate        String?
+  dietaryPreferences String?
+  notes              String?
+
+  // Reconciliation flags from the two-spreadsheet merge — see plan doc.
+  needsReview Boolean @default(false)
+  reviewNote  String?
+
+  // Wedding-party members are Guest rows extended with these fields, rather than a
+  // separate duplicate roster (the docx wedding-party list and guest list are the same people).
+  isWeddingParty   Boolean @default(false)
+  weddingPartyRole String?
+  weddingSide      String?
+
+  bridalPartyProfile BridalPartyProfile?
+  hairMakeupSignup   HairMakeupSignup?
+
+  @@index([tableId])
+  @@index([lastName, firstName])
+}
+
+model BridalPartyProfile {
+  id                 String  @id @default(cuid())
+  guest              Guest   @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  guestId            String  @unique
+  phone              String?
+  mailingAddress     String?
+  favoriteSnack      String?
+  favoriteColor      String?
+  favoriteFoods      String?
+  favoriteDrinks     String?
+  thingsYouEnjoy     String?
+  shirtSize          String?
+  pantSize           String?
+  dressSize          String?
+  shoeSize           String?
+  allergies          String?
+  dietaryRestrictions String?
+  notes              String?
+}
+
+model HairMakeupSignup {
+  id          String  @id @default(cuid())
+  guest       Guest   @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  guestId     String  @unique
+  wantsHair   Boolean @default(false)
+  wantsMakeup Boolean @default(false)
+}
+
+model Vendor {
+  id                    String   @id @default(cuid())
+  name                  String
+  vendorType            String
+  officialChoice        Boolean  @default(false)
+  favorite              Boolean  @default(false)
+  website               String?
+  events                String[]
+  pricing               String?
+  address               String?
+  email                 String?
+  phone                 String?
+  contacted             Boolean  @default(false)
+  appointmentScheduled  Boolean  @default(false)
+  packageDetails        String?
+  notes                 String?
+}
+
+model WeddingBudgetItem {
+  id               String   @id @default(cuid())
+  item             String
+  priorityLevel    String?
+  category         String
+  estimatedCost    Decimal? @db.Decimal(10, 2)
+  budget           Decimal? @db.Decimal(10, 2)
+  amountPaid       Decimal  @default(0) @db.Decimal(10, 2)
+  amountRemaining  Decimal? @db.Decimal(10, 2)
+  notes            String?
+}
+
+enum ExpenseType {
+  EXPENSE
+  INCOME
+}
+
+model WeddingExpense {
+  id             String      @id @default(cuid())
+  date           DateTime
+  amount         Decimal     @db.Decimal(10, 2)
+  category       String
+  subcategory    String?
+  purchasedFrom  String?
+  description    String?
+  type           ExpenseType @default(EXPENSE)
+}
+
+enum TimelineSubEvent {
+  WEDDING_DAY
+  BACHELORETTE_WEEKEND
+}
+
+model TimelineEvent {
+  id          String           @id @default(cuid())
+  subEvent    TimelineSubEvent
+  time        String
+  description String
+  location    String?
+  sortOrder   Int
+
+  @@index([subEvent, sortOrder])
+}
+
+enum PackingListType {
+  WEDDING
+  HONEYMOON
+  BACHELORETTE
+  TRAVEL
+}
+
+model PackingList {
+  id     String          @id @default(cuid())
+  type   PackingListType
+  name   String
+  trip   Trip?           @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  tripId String?
+
+  items PackingItem[]
+
+  @@index([tripId])
+}
+
+model PackingItem {
+  id          String      @id @default(cuid())
+  list        PackingList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  listId      String
+  text        String
+  subcategory String?
+  checked     Boolean     @default(false)
+
+  @@index([listId])
+}
+
+model GuestMessageTemplate {
+  id           String  @id @default(cuid())
+  triggerLabel String?
+  body         String
+  audience     String?
+}
+
+// ---------- General To-Do ----------
+
+enum TaskList {
+  GENERAL
+  WORK
+}
+
+model Task {
+  id        String    @id @default(cuid())
+  listType  TaskList  @default(GENERAL)
+  title     String
+  notes     String?
+  priority  Priority?
+  dueDate   DateTime?
+  completed Boolean   @default(false)
+  profile   Profile?  @relation(fields: [profileId], references: [id])
+  profileId String?
+  createdAt DateTime  @default(now())
+
+  @@index([listType, completed])
+}
+
+// ---------- Household ----------
+
+enum RecurrenceFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+model Chore {
+  id              String              @id @default(cuid())
+  title           String
+  notes           String?
+  frequency       RecurrenceFrequency @default(WEEKLY)
+  priority        Priority?
+  assignee        Profile?            @relation(fields: [assigneeId], references: [id])
+  assigneeId      String?
+  lastCompletedAt DateTime?
+  createdAt       DateTime            @default(now())
+}
+
+model HomeProject {
+  id        String    @id @default(cuid())
+  title     String
+  notes     String?
+  priority  Priority?
+  dueDate   DateTime?
+  completed Boolean   @default(false)
+  createdAt DateTime  @default(now())
+}
+
+// ---------- Groceries & Recipes ----------
+
+model Recipe {
+  id           String   @id @default(cuid())
+  title        String
+  description  String?
+  instructions String
+  prepMinutes  Int?
+  cookMinutes  Int?
+  servings     Int?
+  source       String?
+  notes        String?
+  createdAt    DateTime @default(now())
+
+  ingredients     RecipeIngredient[]
+  mealPlanEntries MealPlanEntry[]
+}
+
+model RecipeIngredient {
+  id       String @id @default(cuid())
+  recipe   Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  recipeId String
+  name     String
+  quantity String?
+
+  @@index([recipeId])
+}
+
+model PantryItem {
+  id        String   @id @default(cuid())
+  name      String
+  quantity  String?
+  notes     String?
+  updatedAt DateTime @updatedAt
+
+  @@index([name])
+}
+
+model GroceryListItem {
+  id        String   @id @default(cuid())
+  name      String
+  quantity  String?
+  checked   Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+// ---------- Links & Documents ----------
+// General-purpose (not wedding-specific data), just surfaced under the Wedding
+// nav per Mikayla's request rather than getting its own top-level section.
+
+model LinkDocument {
+  id        String   @id @default(cuid())
+  title     String
+  url       String?
+  category  String
+  notes     String?
+  createdAt DateTime @default(now())
+
+  @@index([category])
+}
+
+// ---------- Relationship ----------
+
+model DailyCheckIn {
+  id        String   @id @default(cuid())
+  profile   Profile  @relation(fields: [profileId], references: [id])
+  profileId String
+  date      DateTime @db.Date
+  energy    Int
+  mood      Int
+  need      String?
+  want      String?
+  verse     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([profileId, date])
+  @@index([date])
+}
+
+// ---------- Travel ----------
+
+model Trip {
+  id          String    @id @default(cuid())
+  name        String
+  destination String?
+  startDate   DateTime? @db.Date
+  endDate     DateTime? @db.Date
+  notes       String?
+  createdAt   DateTime  @default(now())
+
+  itinerary    ItineraryItem[]
+  packingLists PackingList[]
+}
+
+model ItineraryItem {
+  id          String    @id @default(cuid())
+  trip        Trip      @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  tripId      String
+  date        DateTime? @db.Date
+  time        String?
+  description String
+  location    String?
+  sortOrder   Int
+
+  @@index([tripId, sortOrder])
+}
+
+// ---------- Goals ----------
+// Lives on the Relationship page rather than its own top-level section, per
+// Mikayla's request — fits naturally alongside the shared/individual daily
+// check-ins.
+
+enum GoalPeriod {
+  YEARLY
+  QUARTERLY
+}
+
+model Goal {
+  id        String     @id @default(cuid())
+  title     String
+  notes     String?
+  period    GoalPeriod
+  year      Int
+  quarter   Int? // 1-4, only meaningful when period = QUARTERLY
+  progress  Int        @default(0) // 0-100
+  completed Boolean    @default(false)
+  profile   Profile?   @relation(fields: [profileId], references: [id])
+  profileId String? // null = shared/couple goal
+  createdAt DateTime   @default(now())
+
+  @@index([year, period])
+}
+
+// ---------- Meal Plan ----------
+// Nested under the Groceries nav (not its own top-level section), per
+// Mikayla's request — reuses the Recipe/RecipeIngredient models and the
+// pantry-matching logic already built for Groceries.
+
+enum MealSlot {
+  BREAKFAST
+  LUNCH
+  DINNER
+}
+
+model MealPlanEntry {
+  id       String   @id @default(cuid())
+  date     DateTime @db.Date
+  slot     MealSlot
+  recipe   Recipe?  @relation(fields: [recipeId], references: [id], onDelete: SetNull)
+  recipeId String?
+  mealName String? // freeform meal text, used when no recipe is linked
+  notes    String?
+
+  @@unique([date, slot])
+  @@index([date])
+}
+
+// ---------- Finance ----------
+// New top-level section, distinct from Wedding's own budget/expense models
+// (which stay wedding-specific).
+
+model FinanceCategory {
+  id            String   @id @default(cuid())
+  name          String   @unique
+  monthlyBudget Decimal  @db.Decimal(10, 2)
+  notes         String?
+  createdAt     DateTime @default(now())
+
+  expenses FinanceExpense[]
+}
+
+model FinanceExpense {
+  id          String           @id @default(cuid())
+  date        DateTime         @db.Date
+  amount      Decimal          @db.Decimal(10, 2)
+  category    FinanceCategory? @relation(fields: [categoryId], references: [id])
+  categoryId  String?
+  description String?
+  paidBy      Profile?         @relation(fields: [paidById], references: [id])
+  paidById    String?
+  createdAt   DateTime         @default(now())
+
+  @@index([date])
+  @@index([categoryId])
+}
+
+enum BillFrequency {
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+model Bill {
+  id         String        @id @default(cuid())
+  name       String
+  amount     Decimal       @db.Decimal(10, 2)
+  dueDay     Int? // day-of-month, 1-31
+  frequency  BillFrequency @default(MONTHLY)
+  autopay    Boolean       @default(false)
+  assignee   Profile?      @relation(fields: [assigneeId], references: [id])
+  assigneeId String?
+  notes      String?
+  lastPaidAt DateTime?
+  createdAt  DateTime      @default(now())
+}
+
+// ---------- Calendar ----------
+// Standalone event list — not an aggregation of Wedding Timeline or Travel
+// Itinerary events. CalendarCategory (defined in the cross-cutting section
+// above) lets a personal event be tagged as wedding/family/work/etc-related.
+
+model CalendarEvent {
+  id        String           @id @default(cuid())
+  title     String
+  date      DateTime         @db.Date
+  time      String? // free-text, e.g. "3:00 PM" — matches TimelineEvent.time / ItineraryItem.time
+  category  CalendarCategory @default(PERSONAL)
+  location  String?
+  notes     String?
+  createdAt DateTime         @default(now())
+
+  @@index([date])
+}
