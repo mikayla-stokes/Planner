@@ -38,8 +38,8 @@ const PRIORITY_LABELS: Record<Priority | "NONE", string> = {
 
 type FormState = { title: string; notes: string; priority: Priority | "NONE"; dueDate: string };
 
-function emptyForm(): FormState {
-  return { title: "", notes: "", priority: "NONE", dueDate: "" };
+function emptyForm(defaultPriority: Priority | "NONE" = "NONE"): FormState {
+  return { title: "", notes: "", priority: defaultPriority, dueDate: "" };
 }
 
 function projectToForm(p: ExistingProject): FormState {
@@ -113,9 +113,9 @@ function Fields({ form, setForm }: { form: FormState; setForm: (f: FormState) =>
   );
 }
 
-export function AddProjectButton() {
+export function AddProjectButton({ defaultPriority }: { defaultPriority?: Priority } = {}) {
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState<FormState>(emptyForm());
+  const [form, setForm] = useState<FormState>(() => emptyForm(defaultPriority));
   const [pending, startTransition] = useTransition();
 
   return (
@@ -123,7 +123,7 @@ export function AddProjectButton() {
       open={open}
       onOpenChange={(v) => {
         setOpen(v);
-        if (!v) setForm(emptyForm());
+        if (!v) setForm(emptyForm(defaultPriority));
       }}
     >
       <DialogTrigger render={<Button type="button" size="sm" className="gap-1" />}>
@@ -142,7 +142,7 @@ export function AddProjectButton() {
               startTransition(async () => {
                 await createHomeProject(toInput(form));
                 setOpen(false);
-                setForm(emptyForm());
+                setForm(emptyForm(defaultPriority));
               });
             }}
           >

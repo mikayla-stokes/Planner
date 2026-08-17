@@ -8,6 +8,7 @@ export async function toggleChecklistItem(id: string, completed: boolean) {
   await db.checklistItem.update({ where: { id }, data: { completed } });
   revalidatePath("/wedding/checklist");
   revalidatePath("/wedding");
+  revalidatePath("/todo");
 }
 
 export async function createChecklistItem(input: {
@@ -30,6 +31,7 @@ export async function createChecklistItem(input: {
   });
   revalidatePath("/wedding/checklist");
   revalidatePath("/wedding");
+  revalidatePath("/todo");
 }
 
 export async function updateChecklistItem(input: {
@@ -45,10 +47,12 @@ export async function updateChecklistItem(input: {
   });
   revalidatePath("/wedding/checklist");
   revalidatePath("/wedding");
+  revalidatePath("/todo");
 }
 
 export async function deleteChecklistItem(id: string) {
   await db.checklistItem.delete({ where: { id } });
   revalidatePath("/wedding/checklist");
   revalidatePath("/wedding");
+  revalidatePath("/todo");
 }

@@ -69,19 +69,23 @@ function cleanProject(input: HomeProjectInput) {
 export async function toggleHomeProject(id: string, completed: boolean) {
   await db.homeProject.update({ where: { id }, data: { completed } });
   revalidatePath("/household");
+  revalidatePath("/todo");
 }
 
 export async function createHomeProject(input: HomeProjectInput) {
   await db.homeProject.create({ data: cleanProject(input) });
   revalidatePath("/household");
+  revalidatePath("/todo");
 }
 
 export async function updateHomeProject(id: string, input: HomeProjectInput) {
   await db.homeProject.update({ where: { id }, data: cleanProject(input) });
   revalidatePath("/household");
+  revalidatePath("/todo");
 }
 
 export async function deleteHomeProject(id: string) {
   await db.homeProject.delete({ where: { id } });
   revalidatePath("/household");
+  revalidatePath("/todo");
 }

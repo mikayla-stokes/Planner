@@ -49,18 +49,24 @@ type ExistingItem = {
   notes: string | null;
 };
 
-export function AddChecklistItemButton({ milestoneId }: { milestoneId: string }) {
+export function AddChecklistItemButton({
+  milestoneId,
+  defaultPriority,
+}: {
+  milestoneId: string;
+  defaultPriority?: Priority;
+}) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [owner, setOwner] = useState<ChecklistOwner>("SHARED");
-  const [priority, setPriority] = useState<Priority | "NONE">("NONE");
+  const [priority, setPriority] = useState<Priority | "NONE">(defaultPriority ?? "NONE");
   const [notes, setNotes] = useState("");
   const [pending, startTransition] = useTransition();
 
   function reset() {
     setTitle("");
     setOwner("SHARED");
-    setPriority("NONE");
+    setPriority(defaultPriority ?? "NONE");
     setNotes("");
   }
 

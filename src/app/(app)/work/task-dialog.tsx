@@ -47,8 +47,8 @@ type FormState = {
   profileId: string;
 };
 
-function emptyForm(): FormState {
-  return { title: "", notes: "", priority: "NONE", dueDate: "", profileId: UNASSIGNED };
+function emptyForm(defaultPriority: Priority | "NONE" = "NONE"): FormState {
+  return { title: "", notes: "", priority: defaultPriority, dueDate: "", profileId: UNASSIGNED };
 }
 
 function taskToForm(t: ExistingTask): FormState {
@@ -149,9 +149,15 @@ function Fields({
   );
 }
 
-export function AddTaskButton({ profiles }: { profiles: Profiles }) {
+export function AddTaskButton({
+  profiles,
+  defaultPriority,
+}: {
+  profiles: Profiles;
+  defaultPriority?: Priority;
+}) {
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState<FormState>(emptyForm());
+  const [form, setForm] = useState<FormState>(() => emptyForm(defaultPriority));
   const [pending, startTransition] = useTransition();
 
   return (
@@ -159,7 +165,7 @@ export function AddTaskButton({ profiles }: { profiles: Profiles }) {
       open={open}
       onOpenChange={(v) => {
         setOpen(v);
-        if (!v) setForm(emptyForm());
+        if (!v) setForm(emptyForm(defaultPriority));
       }}
     >
       <DialogTrigger render={<Button type="button" size="sm" className="gap-1" />}>
@@ -178,7 +184,7 @@ export function AddTaskButton({ profiles }: { profiles: Profiles }) {
               startTransition(async () => {
                 await createTask(toInput(form));
                 setOpen(false);
-                setForm(emptyForm());
+                setForm(emptyForm(defaultPriority));
               });
             }}
           >

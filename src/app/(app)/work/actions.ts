@@ -26,22 +26,26 @@ export async function toggleTask(id: string, completed: boolean) {
   await db.task.update({ where: { id }, data: { completed } });
   revalidatePath("/work");
   revalidatePath("/");
+  revalidatePath("/todo");
 }
 
 export async function createTask(input: TaskInput) {
   await db.task.create({ data: { ...clean(input), listType: "WORK" } });
   revalidatePath("/work");
   revalidatePath("/");
+  revalidatePath("/todo");
 }
 
 export async function updateTask(id: string, input: TaskInput) {
   await db.task.update({ where: { id }, data: clean(input) });
   revalidatePath("/work");
   revalidatePath("/");
+  revalidatePath("/todo");
 }
 
 export async function deleteTask(id: string) {
   await db.task.delete({ where: { id } });
   revalidatePath("/work");
   revalidatePath("/");
+  revalidatePath("/todo");
 }

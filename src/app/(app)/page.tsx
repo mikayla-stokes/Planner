@@ -7,25 +7,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { QuickAddTask } from "./quick-add-task";
 
-function startOfToday() {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
 export default async function DashboardPage() {
-  const today = startOfToday();
-  const endOfToday = new Date(today.getTime() + 24 * 60 * 60 * 1000);
-
   const [dueTasks, dueWorkTasks, allChores, wedding, checklistTotal, checklistDone, upcomingEvents] = await Promise.all([
     db.task.findMany({
-      where: { listType: "GENERAL", completed: false, dueDate: { lt: endOfToday } },
-      orderBy: { dueDate: "asc" },
+      where: { listType: "GENERAL", completed: false },
+      orderBy: [{ dueDate: { sort: "asc", nulls: "last" } }, { createdAt: "asc" }],
       take: 5,
     }),
     db.task.findMany({
-      where: { listType: "WORK", completed: false, dueDate: { lt: endOfToday } },
-      orderBy: { dueDate: "asc" },
+      where: { listType: "WORK", completed: false },
+      orderBy: [{ dueDate: { sort: "asc", nulls: "last" } }, { createdAt: "asc" }],
       take: 5,
     }),
     db.chore.findMany({ orderBy: { createdAt: "asc" } }),
@@ -57,12 +48,12 @@ export default async function DashboardPage() {
         <CardHeader className="pb-2">
           <CardTitle className="text-base">
             <Link href="/todo" className="hover:underline">
-              To-Do {dueTasks.length > 0 ? `— ${dueTasks.length} due` : ""}
+              To-Do {dueTasks.length > 0 ? `— ${dueTasks.length} open` : ""}
             </Link>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-1.5">
-          {dueTasks.length === 0 && <p className="text-muted-foreground text-sm">Nothing due. 🎉</p>}
+          {dueTasks.length === 0 && <p className="text-muted-foreground text-sm">Nothing on your list. 🎉</p>}
           {dueTasks.map((task) => (
             <div key={task.id} className="flex items-center justify-between text-sm">
               <span>{task.title}</span>
@@ -80,12 +71,12 @@ export default async function DashboardPage() {
         <CardHeader className="pb-2">
           <CardTitle className="text-base">
             <Link href="/work" className="hover:underline">
-              Work {dueWorkTasks.length > 0 ? `— ${dueWorkTasks.length} due` : ""}
+              Work {dueWorkTasks.length > 0 ? `— ${dueWorkTasks.length} open` : ""}
             </Link>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-1.5">
-          {dueWorkTasks.length === 0 && <p className="text-muted-foreground text-sm">Nothing due. 🎉</p>}
+          {dueWorkTasks.length === 0 && <p className="text-muted-foreground text-sm">Nothing on your list. 🎉</p>}
           {dueWorkTasks.map((task) => (
             <div key={task.id} className="flex items-center justify-between text-sm">
               <span>{task.title}</span>
