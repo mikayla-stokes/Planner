@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { isChoreDue } from "../household/due-status";
 
 const PRIORITY_RANK = { HIGH: 0, MEDIUM: 1, LOW: 2 };
 
@@ -20,11 +21,24 @@ export async function getProfiles() {
 // of these same items.
 
 export async function getHouseholdPriorities() {
-  const projects = await db.homeProject.findMany({
-    where: { completed: false, priority: { not: null } },
-    orderBy: [{ dueDate: "asc" }, { createdAt: "asc" }],
-  });
-  return projects.sort((a, b) => PRIORITY_RANK[a.priority!] - PRIORITY_RANK[b.priority!]);
+  const [projects, chores] = await Promise.all([
+    db.homeProject.findMany({
+      where: { completed: false, priority: { not: null } },
+      orderBy: [{ dueDate: "asc" }, { createdAt: "asc" }],
+    }),
+    db.chore.findMany({
+      where: { priority: { not: null } },
+      include: { assignee: true },
+      orderBy: { createdAt: "asc" },
+    }),
+  ]);
+  const dueChores = chores.filter((c) => isChoreDue(c.frequency, c.lastCompletedAt));
+
+  const items = [
+    ...projects.map((project) => ({ kind: "project" as const, priority: project.priority!, project })),
+    ...dueChores.map((chore) => ({ kind: "chore" as const, priority: chore.priority!, chore })),
+  ];
+  return items.sort((a, b) => PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority]);
 }
 
 export async function getWorkPriorities() {

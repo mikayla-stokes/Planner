@@ -82,6 +82,7 @@ function ChecklistRow({ item, indent = false }: { item: Item | SubItem; indent?:
 export function ChecklistBoard({ milestones }: { milestones: Milestones }) {
   const [filter, setFilter] = useState<Filter>("All");
   const [hideCompleted, setHideCompleted] = useState(false);
+  const [hideEmpty, setHideEmpty] = useState(false);
 
   const filtered = useMemo(() => {
     return milestones.map((milestone) => ({
@@ -92,7 +93,7 @@ export function ChecklistBoard({ milestones }: { milestones: Milestones }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <Tabs value={filter} onValueChange={(v) => setFilter(v as Filter)}>
           <TabsList>
             {FILTERS.map((f) => (
@@ -102,9 +103,14 @@ export function ChecklistBoard({ milestones }: { milestones: Milestones }) {
             ))}
           </TabsList>
         </Tabs>
-        <Button type="button" variant="ghost" size="sm" onClick={() => setHideCompleted((v) => !v)}>
-          {hideCompleted ? "Show completed" : "Hide completed"}
-        </Button>
+        <div className="flex flex-wrap items-center gap-1">
+          <Button type="button" variant="ghost" size="sm" onClick={() => setHideEmpty((v) => !v)}>
+            {hideEmpty ? "Show empty sections" : "Hide empty sections"}
+          </Button>
+          <Button type="button" variant="ghost" size="sm" onClick={() => setHideCompleted((v) => !v)}>
+            {hideCompleted ? "Show completed" : "Hide completed"}
+          </Button>
+        </div>
       </div>
 
       {filtered.map((milestone) => {
@@ -112,6 +118,8 @@ export function ChecklistBoard({ milestones }: { milestones: Milestones }) {
         const done = milestone.items.filter((i) => i.completed).length;
         const pct = total === 0 ? 0 : Math.round((done / total) * 100);
         const visibleItems = hideCompleted ? milestone.items.filter((i) => !i.completed) : milestone.items;
+
+        if (hideEmpty && visibleItems.length === 0) return null;
 
         return (
           <Card key={milestone.id}>

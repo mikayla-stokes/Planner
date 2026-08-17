@@ -28,24 +28,28 @@ export async function createChore(input: ChoreInput) {
   await db.chore.create({ data: cleanChore(input) });
   revalidatePath("/household");
   revalidatePath("/");
+  revalidatePath("/todo");
 }
 
 export async function updateChore(id: string, input: ChoreInput) {
   await db.chore.update({ where: { id }, data: cleanChore(input) });
   revalidatePath("/household");
   revalidatePath("/");
+  revalidatePath("/todo");
 }
 
 export async function deleteChore(id: string) {
   await db.chore.delete({ where: { id } });
   revalidatePath("/household");
   revalidatePath("/");
+  revalidatePath("/todo");
 }
 
 export async function markChoreDone(id: string) {
   await db.chore.update({ where: { id }, data: { lastCompletedAt: new Date() } });
   revalidatePath("/household");
   revalidatePath("/");
+  revalidatePath("/todo");
 }
 
 // ---------- Home Projects ----------

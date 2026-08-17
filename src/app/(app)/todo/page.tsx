@@ -35,7 +35,7 @@ export default async function TodoPage() {
       </div>
       <TaskBoard tasks={tasks} profiles={profiles} />
 
-      <HouseholdPriorities projects={householdPriorities} />
+      <HouseholdPriorities items={householdPriorities} profiles={profiles} />
       <WorkPriorities tasks={workPriorities} profiles={profiles} />
       <WeddingPriorities items={weddingPriorities} milestoneId={weddingMilestoneId} />
     </div>
