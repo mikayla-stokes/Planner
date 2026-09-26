@@ -2,6 +2,8 @@ import { db } from "@/lib/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { AddBudgetItemButton, EditBudgetItemButton } from "./budget-item-dialog";
+import { ExportButton } from "@/components/export-button";
+import { dateOnly, label, toNumber } from "@/lib/export";
 
 function money(value: unknown) {
   return Number(value ?? 0).toLocaleString("en-US", {
@@ -23,6 +25,34 @@ export default async function BudgetPage() {
     .filter((e) => e.type === "INCOME")
     .reduce((sum, e) => sum + Number(e.amount), 0);
 
+  const exportSheets = [
+    {
+      name: "Budget Items",
+      rows: items.map((i) => ({
+        Item: i.item,
+        Category: i.category,
+        Priority: i.priorityLevel,
+        "Estimated Cost": toNumber(i.estimatedCost),
+        Budget: toNumber(i.budget),
+        Paid: toNumber(i.amountPaid),
+        Remaining: Number(i.budget ?? i.estimatedCost ?? 0) - Number(i.amountPaid),
+        Notes: i.notes,
+      })),
+    },
+    {
+      name: "Spending",
+      rows: expenses.map((e) => ({
+        Date: dateOnly(e.date),
+        Type: label(e.type),
+        Amount: toNumber(e.amount),
+        Category: e.category,
+        Subcategory: e.subcategory,
+        "Purchased From": e.purchasedFrom,
+        Description: e.description,
+      })),
+    },
+  ];
+
   return (
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-3">
@@ -33,7 +63,10 @@ export default async function BudgetPage() {
             {totalReceived > 0 ? ` · ${money(totalReceived)} received in gifts` : ""}
           </p>
         </div>
-        <AddBudgetItemButton />
+        <div className="flex shrink-0 items-center gap-2">
+          <ExportButton filename="wedding-budget" sheets={exportSheets} />
+          <AddBudgetItemButton />
+        </div>
       </div>
 
       <div className="space-y-2">

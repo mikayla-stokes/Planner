@@ -2,6 +2,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { getCategories, getExpensesThisMonth } from "./queries";
 import { AddCategoryButton, EditCategoryButton } from "./category-dialog";
+import { ExportButton } from "@/components/export-button";
 
 function money(value: unknown) {
   return Number(value ?? 0).toLocaleString("en-US", {
@@ -23,6 +24,35 @@ export default async function FinancePage() {
   const totalBudget = categories.reduce((sum, c) => sum + Number(c.monthlyBudget), 0);
   const totalSpent = expenses.reduce((sum, e) => sum + Number(e.amount), 0);
 
+  const month = new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  const exportSheets = [
+    {
+      name: `Budget ${month}`,
+      rows: [
+        ...categories.map((c) => {
+          const budget = Number(c.monthlyBudget);
+          const spent = spentByCategory.get(c.id) ?? 0;
+          return {
+            Category: c.name,
+            "Monthly Budget": budget,
+            "Spent This Month": spent,
+            Remaining: budget - spent,
+            "% Used": budget === 0 ? 0 : Math.round((spent / budget) * 100),
+            Notes: c.notes,
+          };
+        }),
+        {
+          Category: "TOTAL",
+          "Monthly Budget": totalBudget,
+          "Spent This Month": totalSpent,
+          Remaining: totalBudget - totalSpent,
+          "% Used": totalBudget === 0 ? 0 : Math.round((totalSpent / totalBudget) * 100),
+          Notes: null,
+        },
+      ],
+    },
+  ];
+
   return (
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-3">
@@ -32,7 +62,10 @@ export default async function FinancePage() {
             {money(totalSpent)} spent of {money(totalBudget)} budgeted this month
           </p>
         </div>
-        <AddCategoryButton />
+        <div className="flex shrink-0 items-center gap-2">
+          <ExportButton filename="finance-budget" sheets={exportSheets} />
+          <AddCategoryButton />
+        </div>
       </div>
 
       <div className="space-y-2">

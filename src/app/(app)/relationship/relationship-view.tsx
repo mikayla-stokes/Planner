@@ -19,11 +19,13 @@ export function RelationshipView({
   todayCheckIns,
   history,
   goals,
+  exportButton,
 }: {
   profiles: Profiles;
   todayCheckIns: TodayCheckIns;
   history: History;
   goals: Goals;
+  exportButton?: React.ReactNode;
 }) {
   const { actingAs } = useActingAs();
   const me = profiles.find((p) => p.name === actingAs);
@@ -33,9 +35,12 @@ export function RelationshipView({
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Relationship</h1>
-        <p className="text-muted-foreground text-sm">Daily check-ins and shared goals.</p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Relationship</h1>
+          <p className="text-muted-foreground text-sm">Daily check-ins and shared goals.</p>
+        </div>
+        {exportButton}
       </div>
 
       <Tabs defaultValue="checkin">

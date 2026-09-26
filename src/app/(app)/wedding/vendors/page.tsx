@@ -2,9 +2,33 @@ import { db } from "@/lib/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AddVendorButton, EditVendorButton } from "./vendor-form-dialog";
+import { ExportButton } from "@/components/export-button";
+import { yesNo } from "@/lib/export";
 
 export default async function VendorsPage() {
   const vendors = await db.vendor.findMany({ orderBy: { vendorType: "asc" } });
+
+  const exportSheets = [
+    {
+      name: "Vendors",
+      rows: vendors.map((v) => ({
+        Vendor: v.name,
+        Type: v.vendorType,
+        Booked: yesNo(v.officialChoice),
+        Favorite: yesNo(v.favorite),
+        Contacted: yesNo(v.contacted),
+        "Appointment Scheduled": yesNo(v.appointmentScheduled),
+        Events: v.events.join(", "),
+        Pricing: v.pricing,
+        Package: v.packageDetails,
+        Phone: v.phone,
+        Email: v.email,
+        Website: v.website,
+        Address: v.address,
+        Notes: v.notes,
+      })),
+    },
+  ];
 
   return (
     <div className="space-y-4">
@@ -13,7 +37,10 @@ export default async function VendorsPage() {
           <h1 className="text-2xl font-semibold tracking-tight">Vendors</h1>
           <p className="text-muted-foreground text-sm">{vendors.length} vendors</p>
         </div>
-        <AddVendorButton />
+        <div className="flex shrink-0 items-center gap-2">
+          <ExportButton filename="wedding-vendors" sheets={exportSheets} />
+          <AddVendorButton />
+        </div>
       </div>
 
       <div className="space-y-2">

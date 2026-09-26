@@ -5,6 +5,8 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { NotesForm } from "./notes-form";
 import type { ChecklistOwner, Priority } from "@/generated/prisma/enums";
+import { ExportButton } from "@/components/export-button";
+import { dateOnly, detailRows, label } from "@/lib/export";
 
 function formatMoney(value: unknown) {
   const n = Number(value ?? 0);
@@ -71,23 +73,57 @@ export default async function WeddingOverviewPage() {
 
   const daysToGo = wedding ? daysUntil(wedding.weddingDate) : null;
 
+  const exportSheets = [
+    {
+      name: "Overview",
+      rows: detailRows({
+        Bride: wedding?.brideName,
+        Groom: wedding?.groomName,
+        "Wedding Date": dateOnly(wedding?.weddingDate),
+        "Days To Go": daysToGo,
+        Venue: wedding?.venueName,
+        Ceremony: wedding?.ceremonyLocation,
+        Reception: wedding?.receptionLocation,
+        "Checklist % Done": progressPct,
+        "Checklist Items Done": completedItems,
+        "Checklist Items Total": totalItems,
+        Guests: guestCount,
+        "Guests Needing Review": needsReviewCount,
+        "Budget Paid": totalPaid,
+        "Budget Total": totalBudget,
+        Notes: wedding?.notes,
+      }),
+    },
+    {
+      name: "Mikayla's Priorities",
+      rows: mikaylaPriorities.map((i) => ({ Item: i.title, Priority: label(i.priority), Owner: label(i.owner) })),
+    },
+    {
+      name: "Caleb's Priorities",
+      rows: calebPriorities.map((i) => ({ Item: i.title, Priority: label(i.priority), Owner: label(i.owner) })),
+    },
+  ];
+
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">
-          {wedding ? `${wedding.brideName} & ${wedding.groomName}` : "Wedding Planning"}
-        </h1>
-        {wedding && (
-          <p className="text-muted-foreground text-sm">
-            {wedding.weddingDate.toLocaleDateString("en-US", {
-              weekday: "long",
-              month: "long",
-              day: "numeric",
-              year: "numeric",
-            })}
-            {daysToGo !== null && daysToGo > 0 ? ` · ${daysToGo} days to go` : null}
-          </p>
-        )}
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            {wedding ? `${wedding.brideName} & ${wedding.groomName}` : "Wedding Planning"}
+          </h1>
+          {wedding && (
+            <p className="text-muted-foreground text-sm">
+              {wedding.weddingDate.toLocaleDateString("en-US", {
+                weekday: "long",
+                month: "long",
+                day: "numeric",
+                year: "numeric",
+              })}
+              {daysToGo !== null && daysToGo > 0 ? ` · ${daysToGo} days to go` : null}
+            </p>
+          )}
+        </div>
+        <ExportButton filename="wedding-overview" sheets={exportSheets} />
       </div>
 
       <div className="grid grid-cols-2 gap-3">

@@ -7,6 +7,8 @@ import { AddMissingButton } from "../add-missing-button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ExportButton } from "@/components/export-button";
+import { detailRows, yesNo } from "@/lib/export";
 
 export default async function RecipeDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -20,6 +22,31 @@ export default async function RecipeDetailPage({ params }: { params: Promise<{ i
 
   const totalMinutes = (recipe.prepMinutes ?? 0) + (recipe.cookMinutes ?? 0);
 
+  const exportSheets = [
+    {
+      name: "Recipe",
+      rows: detailRows({
+        Recipe: recipe.title,
+        Description: recipe.description,
+        Tags: recipe.tags.map((t) => t.name).join(", "),
+        "Prep (min)": recipe.prepMinutes,
+        "Cook (min)": recipe.cookMinutes,
+        Servings: recipe.servings,
+        Instructions: recipe.instructions,
+        Source: recipe.source,
+        Notes: recipe.notes,
+      }),
+    },
+    {
+      name: "Ingredients",
+      rows: recipe.ingredients.map((ing) => ({
+        Ingredient: ing.name,
+        Quantity: ing.quantity,
+        "In Pantry": yesNo(isOnHand(ing.name, pantryNames)),
+      })),
+    },
+  ];
+
   return (
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-3">
@@ -28,6 +55,7 @@ export default async function RecipeDetailPage({ params }: { params: Promise<{ i
           {recipe.description && <p className="text-muted-foreground text-sm">{recipe.description}</p>}
         </div>
         <div className="flex shrink-0 items-center gap-1">
+          <ExportButton filename={`recipe-${recipe.title}`} sheets={exportSheets} />
           <EditRecipeButton recipe={recipe} allTags={allTags} />
           <DeleteRecipeButton id={recipe.id} title={recipe.title} />
         </div>

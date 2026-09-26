@@ -1,5 +1,7 @@
 import { db } from "@/lib/db";
 import { PackingListView } from "./packing-list-view";
+import { ExportButton } from "@/components/export-button";
+import { yesNo } from "@/lib/export";
 
 export default async function PackingPage() {
   const lists = await db.packingList.findMany({
@@ -12,11 +14,19 @@ export default async function PackingPage() {
     orderBy: { type: "asc" },
   });
 
+  const exportSheets = lists.map((list) => ({
+    name: list.name,
+    rows: list.items.map((item) => ({ Item: item.text, Category: item.subcategory, Packed: yesNo(item.checked) })),
+  }));
+
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Packing Lists</h1>
-        <p className="text-muted-foreground text-sm">Wedding, honeymoon, and bachelorette weekend.</p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Packing Lists</h1>
+          <p className="text-muted-foreground text-sm">Wedding, honeymoon, and bachelorette weekend.</p>
+        </div>
+        <ExportButton filename="wedding-packing" sheets={exportSheets} />
       </div>
       <PackingListView lists={lists} />
     </div>

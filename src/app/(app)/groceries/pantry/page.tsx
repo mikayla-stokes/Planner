@@ -1,9 +1,17 @@
 import { getPantryItems } from "./queries";
 import { AddPantryItemButton, EditPantryItemButton } from "./pantry-item-dialog";
 import { Card, CardContent } from "@/components/ui/card";
+import { ExportButton } from "@/components/export-button";
 
 export default async function PantryPage() {
   const items = await getPantryItems();
+
+  const exportSheets = [
+    {
+      name: "Pantry",
+      rows: items.map((i) => ({ Item: i.name, Quantity: i.quantity, Notes: i.notes, Updated: i.updatedAt })),
+    },
+  ];
 
   return (
     <div className="space-y-4">
@@ -12,7 +20,10 @@ export default async function PantryPage() {
           <h1 className="text-2xl font-semibold tracking-tight">Pantry</h1>
           <p className="text-muted-foreground text-sm">{items.length} items on hand</p>
         </div>
-        <AddPantryItemButton />
+        <div className="flex shrink-0 items-center gap-2">
+          <ExportButton filename="pantry" sheets={exportSheets} />
+          <AddPantryItemButton />
+        </div>
       </div>
       <Card>
         <CardContent className="divide-y py-0">

@@ -3,17 +3,30 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { AddTimelineEventButton, EditTimelineEventButton } from "./timeline-event-dialog";
 import type { TimelineEvent } from "@/generated/prisma/client";
+import { ExportButton } from "@/components/export-button";
+
+function timelineRows(events: TimelineEvent[]) {
+  return events.map((e) => ({ Time: e.time, Description: e.description, Location: e.location }));
+}
 
 export default async function TimelinePage() {
   const events = await db.timelineEvent.findMany({ orderBy: { sortOrder: "asc" } });
   const weddingDay = events.filter((e) => e.subEvent === "WEDDING_DAY");
   const bachelorette = events.filter((e) => e.subEvent === "BACHELORETTE_WEEKEND");
 
+  const exportSheets = [
+    { name: "Wedding Day", rows: timelineRows(weddingDay) },
+    { name: "Bachelorette Weekend", rows: timelineRows(bachelorette) },
+  ];
+
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Timeline</h1>
-        <p className="text-muted-foreground text-sm">The day-of schedule and the bachelorette itinerary.</p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Timeline</h1>
+          <p className="text-muted-foreground text-sm">The day-of schedule and the bachelorette itinerary.</p>
+        </div>
+        <ExportButton filename="wedding-timeline" sheets={exportSheets} />
       </div>
 
       <Tabs defaultValue="wedding-day">

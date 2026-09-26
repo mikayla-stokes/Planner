@@ -6,6 +6,8 @@ import { AddItineraryItemButton } from "./itinerary-dialog";
 import { ItineraryList } from "./itinerary-list";
 import { PackingLists } from "./packing-lists";
 import { Card, CardContent } from "@/components/ui/card";
+import { ExportButton } from "@/components/export-button";
+import { dateOnly, detailRows, yesNo } from "@/lib/export";
 
 function formatDate(d: Date) {
   return d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
@@ -24,6 +26,39 @@ export default async function TripDetailPage({ params }: { params: Promise<{ id:
         ? formatDate(trip.startDate)
         : null;
 
+  const exportSheets = [
+    {
+      name: "Trip",
+      rows: detailRows({
+        Trip: trip.name,
+        Destination: trip.destination,
+        Start: dateOnly(trip.startDate),
+        End: dateOnly(trip.endDate),
+        Notes: trip.notes,
+      }),
+    },
+    {
+      name: "Itinerary",
+      rows: trip.itinerary.map((i) => ({
+        Date: dateOnly(i.date),
+        Time: i.time,
+        Description: i.description,
+        Location: i.location,
+      })),
+    },
+    {
+      name: "Packing",
+      rows: trip.packingLists.flatMap((list) =>
+        list.items.map((item) => ({
+          List: list.name,
+          Item: item.text,
+          Category: item.subcategory,
+          Packed: yesNo(item.checked),
+        })),
+      ),
+    },
+  ];
+
   return (
     <div className="space-y-5">
       <div className="flex items-start justify-between gap-3">
@@ -33,7 +68,10 @@ export default async function TripDetailPage({ params }: { params: Promise<{ id:
             {[trip.destination, dateRange].filter(Boolean).join(" · ") || "No details yet"}
           </p>
         </div>
-        <EditTripButton trip={trip} />
+        <div className="flex shrink-0 items-center gap-2">
+          <ExportButton filename={`trip-${trip.name}`} sheets={exportSheets} />
+          <EditTripButton trip={trip} />
+        </div>
       </div>
 
       {trip.notes && (

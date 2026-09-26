@@ -2,6 +2,8 @@ import Link from "next/link";
 import { getTrips } from "./queries";
 import { AddTripButton } from "./trip-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ExportButton } from "@/components/export-button";
+import { dateOnly } from "@/lib/export";
 
 function formatRange(start: Date | null, end: Date | null) {
   const opts: Intl.DateTimeFormatOptions = { month: "short", day: "numeric", timeZone: "UTC" };
@@ -15,6 +17,19 @@ function formatRange(start: Date | null, end: Date | null) {
 export default async function TravelPage() {
   const trips = await getTrips();
 
+  const exportSheets = [
+    {
+      name: "Trips",
+      rows: trips.map((t) => ({
+        Trip: t.name,
+        Destination: t.destination,
+        Start: dateOnly(t.startDate),
+        End: dateOnly(t.endDate),
+        Notes: t.notes,
+      })),
+    },
+  ];
+
   return (
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-3">
@@ -22,7 +37,10 @@ export default async function TravelPage() {
           <h1 className="text-2xl font-semibold tracking-tight">Travel</h1>
           <p className="text-muted-foreground text-sm">{trips.length} trips</p>
         </div>
-        <AddTripButton />
+        <div className="flex shrink-0 items-center gap-2">
+          <ExportButton filename="trips" sheets={exportSheets} />
+          <AddTripButton />
+        </div>
       </div>
 
       <div className="space-y-2">

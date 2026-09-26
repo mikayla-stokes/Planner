@@ -6,6 +6,8 @@ import { todayDateOnly } from "./calendar/date-utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { QuickAddTask } from "./quick-add-task";
+import { ExportButton } from "@/components/export-button";
+import { dateOnly, label } from "@/lib/export";
 
 export default async function DashboardPage() {
   const [dueTasks, dueWorkTasks, allChores, wedding, checklistTotal, checklistDone, upcomingEvents] = await Promise.all([
@@ -34,6 +36,31 @@ export default async function DashboardPage() {
   const daysToGo = wedding ? daysUntil(wedding.weddingDate) : null;
   const checklistPct = checklistTotal === 0 ? 0 : Math.round((checklistDone / checklistTotal) * 100);
 
+  const exportSheets = [
+    { name: "To-Do", rows: dueTasks.map((t) => ({ Task: t.title, Due: dateOnly(t.dueDate), Priority: label(t.priority) })) },
+    { name: "Work", rows: dueWorkTasks.map((t) => ({ Task: t.title, Due: dateOnly(t.dueDate), Priority: label(t.priority) })) },
+    {
+      name: "Chores Due",
+      rows: dueChores.map((c) => ({ Chore: c.title, Frequency: label(c.frequency), "Last Done": c.lastCompletedAt })),
+    },
+    {
+      name: "Wedding",
+      rows: [
+        {
+          "Wedding Date": wedding ? dateOnly(wedding.weddingDate) : null,
+          "Days To Go": daysToGo,
+          "Checklist % Done": checklistPct,
+          "Checklist Items Done": checklistDone,
+          "Checklist Items Total": checklistTotal,
+        },
+      ],
+    },
+    {
+      name: "Upcoming Events",
+      rows: upcomingEvents.map((e) => ({ Event: e.title, Date: dateOnly(e.date), Time: e.time, Location: e.location })),
+    },
+  ];
+
   return (
     <div className="space-y-5">
       <div className="flex items-start justify-between gap-3">
@@ -41,7 +68,10 @@ export default async function DashboardPage() {
           <h1 className="text-2xl font-semibold tracking-tight">Today</h1>
           <p className="text-muted-foreground text-sm">Your at-a-glance view across everything.</p>
         </div>
-        <QuickAddTask />
+        <div className="flex shrink-0 items-center gap-2">
+          <ExportButton filename="dashboard" sheets={exportSheets} />
+          <QuickAddTask />
+        </div>
       </div>
 
       <Card>
